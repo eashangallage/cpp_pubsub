@@ -59,7 +59,7 @@ public:
   {
     // Create the subscription.
     // The topic_callback function executes whenever data is published
-    // to the 'addison' topic.
+    // to the 'joy' topic.
     subscription_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&Joy2Cmd::topic_callback, this, _1));
 
