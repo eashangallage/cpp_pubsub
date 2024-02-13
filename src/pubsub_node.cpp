@@ -63,7 +63,7 @@ public:
     subscription_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&Joy2Cmd::topic_callback, this, _1));
 
-    // Publisher publishes String messages to a topic named "addison2".
+    // Publisher publishes String messages to a topic named "/diffbot_base_controller/cmd_vel".
     // The size of the queue is 10 messages.
     publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/diffbot_base_controller/cmd_vel", 10);
   }
