@@ -10,6 +10,13 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(ros_phoenix REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/PhoenixControl.msg"
+  DEPENDENCIES ros_phoenix # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+)
 
 add_executable(listener src/my_sbr.cpp)
 ament_target_dependencies(listener rclcpp std_msgs geometry_msgs sensor_msgs)
@@ -19,17 +26,23 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
   
 add_executable(talker src/my_pub.cpp)
-ament_target_dependencies(talker rclcpp std_msgs geometry_msgs sensor_msgs)
+ament_target_dependencies(talker rclcpp std_msgs geometry_msgs sensor_msgs ros_phoenix)
   
 install(TARGETS
   talker    
   DESTINATION lib/${PROJECT_NAME})
   
 add_executable(commander src/pubsub_node.cpp)
-ament_target_dependencies(commander rclcpp std_msgs geometry_msgs sensor_msgs)
+ament_target_dependencies(commander rclcpp sensor_msgs ros_phoenix)
 
 install(TARGETS
   commander
   DESTINATION lib/${PROJECT_NAME})
+
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()
