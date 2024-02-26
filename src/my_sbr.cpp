@@ -15,6 +15,7 @@ Node subscribes to joy_node input
 // #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp> // message type diffbot uses
 #include <sensor_msgs/msg/joy.hpp>             // message type used by the joy_node
+#include <libserial/SerialPort.h>
 
 using std::placeholders::_1;
 

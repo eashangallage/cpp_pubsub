@@ -7,12 +7,15 @@ This program maps the input of the joy_node to to run the ros2_controls_demos/ex
 #include <memory>
 #include <string>
 
+#include <libserial/SerialPort.h>
+
 // following headers can be used depending on the input and output messag type
 #include "rclcpp/rclcpp.hpp"
-#include <sensor_msgs/msg/joy.hpp>              // message type used by the joy_node
-#include <ros_phoenix/msg/motor_control.hpp>    // message type used by the joy_node
+#include <sensor_msgs/msg/joy.hpp>           // message type used by the joy_node
+#include <ros_phoenix/msg/motor_control.hpp> // message type used by the joy_node
 
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 // axes and buttons of 8PowerA Nintendo Switch gamepad
 
@@ -45,6 +48,8 @@ enum Button
 
 };
 
+LibSerial::SerialPort serial_conn_;
+
 // Create the node class named Joy2Cmd which inherits the attributes
 // and methods of the rclcpp::Node class.
 class Joy2Cmd : public rclcpp::Node
@@ -54,6 +59,11 @@ public:
   Joy2Cmd()
       : Node("joy2cmd")
   {
+    std::string serial_device = "/dev/ttyACM0";
+    serial_conn_.Open(serial_device);
+    printf("We are in\n");
+    serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
+
     // Create the subscription.
     // The topic_callback function executes whenever data is published
     // to the 'joy' topic.
@@ -61,15 +71,17 @@ public:
         "joy", 10, std::bind(&Joy2Cmd::topic_callback, this, _1));
 
     // The size of the queue is 10 messages. 10 commands per second
-    publisher_talon_right = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_right/set", 10);
+    publisher_talon_right = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_right/set", 10); // 3
 
-    publisher_talon_left = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_left/set", 10);
+    publisher_talon_left = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_left/set", 10); // 1
   }
 
 private:
   // Receives the published joy input
   void topic_callback(const sensor_msgs::msg::Joy &msg) const
   {
+    rclcpp::Clock::SharedPtr clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+
     // Declare message in the publishing message type
     auto message_talon_right = ros_phoenix::msg::MotorControl();
     auto message_talon_left = ros_phoenix::msg::MotorControl();
@@ -79,18 +91,49 @@ private:
     message_talon_left.mode = 0;
 
     // inputs are scales are [-1,1], output scale [-0.2,0.2]. Hence, input is divided by 5
-    double fwd = msg.axes[LEFT_STICK_Y]/5; // feedback from the gamepad
-    double turn = msg.axes[LEFT_STICK_X]/5;
+    double fwd = msg.axes[LEFT_STICK_Y] / 5; // feedback from the gamepad
+    double turn = msg.axes[LEFT_STICK_X] / 5;
 
     // setting the proper velocity
-    message_talon_right.value = fwd + turn; 
-    message_talon_left.value = fwd - turn; 
+    message_talon_right.value = fwd + turn;
+    message_talon_left.value = fwd - turn;
 
     // Publish the message to diffbot
     publisher_talon_right->publish(message_talon_right);
 
     // Publish the message to rrbot
     publisher_talon_left->publish(message_talon_left);
+
+    if (msg.buttons[3] == 1)
+    { // extend two big actuators
+      serial_conn_.FlushIOBuffers();
+      serial_conn_.Write("1");
+      clock->sleep_for(2ms);
+    }
+    else if (msg.buttons[0] == 1)
+    { // retract two big actuators
+      serial_conn_.FlushIOBuffers();
+      serial_conn_.Write("2");
+      clock->sleep_for(2ms);
+    }
+    else if (msg.buttons[5] == 1)
+    { // extend small actuator
+      serial_conn_.FlushIOBuffers();
+      serial_conn_.Write("3");
+      clock->sleep_for(2ms);
+    }
+    else if (msg.buttons[4] == 1)
+    { // retract small actuator
+      serial_conn_.FlushIOBuffers();
+      serial_conn_.Write("4");
+      clock->sleep_for(2ms);
+    }
+    else if (msg.buttons[2] == 1)
+    { // retract small actuator
+      serial_conn_.FlushIOBuffers();
+      serial_conn_.Write("0");
+      clock->sleep_for(2ms);
+    }
   }
 
   // Declare the subscription attribute
@@ -101,6 +144,10 @@ private:
 
   // Declaration of the publisher attribute for rrbot
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr publisher_talon_left;
+
+  // std::string received = "";
+  // int32_t timeout_ms_ = 1000;
+  // sleep(5);
 };
 
 int main(int argc, char *argv[])
