@@ -41,6 +41,14 @@ install(TARGETS
   commander
   DESTINATION lib/${PROJECT_NAME})
   
+add_executable(motors src/just_motors.cpp)
+ament_target_dependencies(motors rclcpp sensor_msgs ros_phoenix serial) 
+target_link_libraries(motors serial)
+
+install(TARGETS
+  motors
+  DESTINATION lib/${PROJECT_NAME})
+  
   
 add_executable(serial_com src/arduino.cpp)
 ament_target_dependencies(serial_com rclcpp std_msgs geometry_msgs sensor_msgs serial)

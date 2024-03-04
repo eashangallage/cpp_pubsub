@@ -7,8 +7,6 @@ This program maps the input of the joy_node to to run the ros2_controls_demos/ex
 #include <memory>
 #include <string>
 
-#include <libserial/SerialPort.h>
-
 // following headers can be used depending on the input and output messag type
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/joy.hpp>           // message type used by the joy_node
@@ -48,8 +46,6 @@ enum Button
 
 };
 
-LibSerial::SerialPort serial_conn_;
-
 // Create the node class named Joy2Cmd which inherits the attributes
 // and methods of the rclcpp::Node class.
 class Joy2Cmd : public rclcpp::Node
@@ -59,10 +55,6 @@ public:
   Joy2Cmd()
       : Node("joy2cmd")
   {
-    std::string serial_device = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:6:1.0";
-    serial_conn_.Open(serial_device);
-    printf("We are in\n");
-    serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
 
     // Create the subscription.
     // The topic_callback function executes whenever data is published
@@ -91,8 +83,8 @@ private:
     message_talon_left.mode = 0;
 
     // inputs are scales are [-1,1], output scale [-0.2,0.2]. Hence, input is divided by 5
-    double fwd = msg.axes[LEFT_STICK_Y] / 2; // feedback from the gamepad
-    double turn = msg.axes[LEFT_STICK_X] / 2;
+    double fwd = msg.axes[LEFT_STICK_Y] / 5; // feedback from the gamepad
+    double turn = msg.axes[LEFT_STICK_X] / 5;
 
     // setting the proper velocity
     message_talon_right.value = fwd + turn;
@@ -103,37 +95,6 @@ private:
 
     // Publish the message to rrbot
     publisher_talon_left->publish(message_talon_left);
-
-    if (msg.buttons[3] == 1)
-    { // extend two big actuators
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("1");
-      clock->sleep_for(2ms);
-    }
-    else if (msg.buttons[0] == 1)
-    { // retract two big actuators
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("2");
-      clock->sleep_for(2ms);
-    }
-    else if (msg.buttons[5] == 1)
-    { // extend small actuator
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("3");
-      clock->sleep_for(2ms);
-    }
-    else if (msg.buttons[4] == 1)
-    { // retract small actuator
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("4");
-      clock->sleep_for(2ms);
-    }
-    else if (msg.buttons[2] == 1)
-    { // retract small actuator
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("0");
-      clock->sleep_for(2ms);
-    }
   }
 
   // Declare the subscription attribute
