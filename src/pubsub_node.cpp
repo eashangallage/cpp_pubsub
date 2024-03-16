@@ -11,8 +11,9 @@ This program maps the input of the joy_node to to run the ros2_controls_demos/ex
 
 // following headers can be used depending on the input and output messag type
 #include "rclcpp/rclcpp.hpp"
-#include <sensor_msgs/msg/joy.hpp>           // message type used by the joy_node
-#include <ros_phoenix/msg/motor_control.hpp> // message type used by the joy_node
+#include <sensor_msgs/msg/joy.hpp>             // message type used by the joy_node
+// #include <ros_phoenix/msg/motor_control.hpp>   // message type used by the joy_node
+#include <geometry_msgs/msg/twist_stamped.hpp> // message type diffbot uses
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -62,7 +63,7 @@ public:
     std::string serial_device = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:6:1.0";
     serial_conn_.Open(serial_device);
     printf("We are in\n");
-    serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
+    serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
 
     // Create the subscription.
     // The topic_callback function executes whenever data is published
@@ -71,9 +72,10 @@ public:
         "joy", 10, std::bind(&Joy2Cmd::topic_callback, this, _1));
 
     // The size of the queue is 10 messages. 10 commands per second
-    publisher_talon_right = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_right/set", 10); // 3
+    // diff_cmd = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_right/set", 10); // 3
+    diff_cmd = this->create_publisher<geometry_msgs::msg::TwistStamped>("/diffbot_base_controller/cmd_vel", 10); // 3
 
-    publisher_talon_left = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_left/set", 10); // 1
+    // publisher_talon_left = this->create_publisher<ros_phoenix::msg::MotorControl>("/talon_left/set", 10); // 1
   }
 
 private:
@@ -83,26 +85,31 @@ private:
     rclcpp::Clock::SharedPtr clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
 
     // Declare message in the publishing message type
-    auto message_talon_right = ros_phoenix::msg::MotorControl();
-    auto message_talon_left = ros_phoenix::msg::MotorControl();
+    // auto message_talon_right = ros_phoenix::msg::MotorControl();
+    // auto message_talon_left = ros_phoenix::msg::MotorControl();
+    auto cmd_ = geometry_msgs::msg::TwistStamped();
 
     // setting the required to parameters for the message interface
-    message_talon_right.mode = 0; // 0: percentage output, 1: velocity
-    message_talon_left.mode = 0;
+    // message_talon_right.mode = 0; // 0: percentage output, 1: velocity
+    // message_talon_left.mode = 0;
 
     // inputs are scales are [-1,1], output scale [-0.2,0.2]. Hence, input is divided by 5
     double fwd = msg.axes[LEFT_STICK_Y] / 2; // feedback from the gamepad
     double turn = msg.axes[LEFT_STICK_X] / 2;
 
     // setting the proper velocity
-    message_talon_right.value = fwd + turn;
-    message_talon_left.value = fwd - turn;
+    // message_talon_right.value = fwd + turn;
+    // message_talon_left.value = fwd - turn;
+
+    cmd_.header.frame_id = ' '; // for twiststamped messages the headers can be predefined
+    cmd_.twist.linear.x = fwd;
+    cmd_.twist.angular.z = turn;
 
     // Publish the message to diffbot
-    publisher_talon_right->publish(message_talon_right);
+    diff_cmd->publish(cmd_);
 
     // Publish the message to rrbot
-    publisher_talon_left->publish(message_talon_left);
+    // publisher_talon_left->publish(message_talon_left);
 
     if (msg.buttons[3] == 1)
     { // extend two big actuators
@@ -140,10 +147,11 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr subscription_;
 
   // Declaration of the publisher attribute for diffbot
-  rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr publisher_talon_right;
+  // rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr diff_cmd;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr diff_cmd;
 
   // Declaration of the publisher attribute for rrbot
-  rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr publisher_talon_left;
+  // rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr publisher_talon_left;
 
   // std::string received = "";
   // int32_t timeout_ms_ = 1000;

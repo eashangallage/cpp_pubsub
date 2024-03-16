@@ -15,9 +15,17 @@ find_package(ros_phoenix REQUIRED)
 find_package(serial REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/PhoenixControl.msg"
-  DEPENDENCIES ros_phoenix # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+"msg/PhoenixControl.msg"
+DEPENDENCIES ros_phoenix # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
+
+add_executable(serial_com src/arduino.cpp)
+ament_target_dependencies(serial_com rclcpp std_msgs geometry_msgs sensor_msgs serial)
+target_link_libraries(serial_com serial)
+  
+install(TARGETS
+  serial_com
+  DESTINATION lib/${PROJECT_NAME})
 
 add_executable(listener src/my_sbr.cpp)
 ament_target_dependencies(listener rclcpp std_msgs geometry_msgs sensor_msgs)
@@ -34,7 +42,7 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
   
 add_executable(commander src/pubsub_node.cpp)
-ament_target_dependencies(commander rclcpp sensor_msgs ros_phoenix serial)
+ament_target_dependencies(commander rclcpp sensor_msgs geometry_msgs serial)
 target_link_libraries(commander serial)
 
 install(TARGETS
@@ -47,15 +55,6 @@ target_link_libraries(motors serial)
 
 install(TARGETS
   motors
-  DESTINATION lib/${PROJECT_NAME})
-  
-  
-add_executable(serial_com src/arduino.cpp)
-ament_target_dependencies(serial_com rclcpp std_msgs geometry_msgs sensor_msgs serial)
-target_link_libraries(serial_com serial)
-  
-install(TARGETS
-  serial_com
   DESTINATION lib/${PROJECT_NAME})
 
 

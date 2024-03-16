@@ -17,7 +17,7 @@ int main()
    
    serial_conn_.Open(serial_device);
    printf("We are in\n");
-   serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
+   serial_conn_.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
    std::string received = "";
    int32_t timeout_ms_ = 1000;
    sleep(5);
@@ -27,21 +27,21 @@ int main()
       printf("%d\n" ,i);
       serial_conn_.FlushIOBuffers();
       serial_conn_.Write("1");
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("3");
-      sleep(1);
+      // serial_conn_.FlushIOBuffers();
+      // serial_conn_.Write("3");
+      sleep(10);
       // serial_conn_.ReadLine(received, '\n', timeout_ms_); // getting feedback
       // std::cout << received  << std::endl;
-      sleep(2);
+      // sleep(2);
 
       serial_conn_.FlushIOBuffers();
       serial_conn_.Write("2");
-      serial_conn_.FlushIOBuffers();
-      serial_conn_.Write("4");
-      sleep(1);
+      // serial_conn_.FlushIOBuffers();
+      // serial_conn_.Write("4");
+      // sleep(1);
       // serial_conn_.ReadLine(received, '\n', timeout_ms_);
       // std::cout << received  << std::endl;
-      sleep(2);
+      sleep(10);
    }
 
    serial_conn_.Close();
