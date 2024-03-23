@@ -13,7 +13,9 @@ int main()
    // Instantiate a Serial Port and a Serial Stream object.
    LibSerial::SerialPort serial_conn_;
    // std::string serial_device = "/dev/ttyACM0";
-   std::string serial_device = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:6:1.0";
+   std::string serial_device = "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0"; // usb 3 top/ blue port on top
+
+   // "/dev/serial/by-path/pci-0000:00:14.0-usb-0:6:1.0"; laptop asus next to headphone jack
    
    serial_conn_.Open(serial_device);
    printf("We are in\n");
